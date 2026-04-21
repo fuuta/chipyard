@@ -2,14 +2,14 @@
 
 # BUILD BASE FOR CI
 
-FROM ubuntu:20.04 as base
+FROM ubuntu:24.04 AS base
 ARG CHIPYARD_HASH
 
 MAINTAINER https://groups.google.com/forum/#!forum/chipyard
 
 SHELL ["/bin/bash", "-c"]
 
-# Install dependencies for ubuntu-req.sh
+# Install dependencies needed by Chipyard setup scripts
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     curl \
@@ -34,15 +34,16 @@ RUN ./chipyard/.github/scripts/install-conda.sh
 # BUILD IMAGE WITH TOOLCHAINS
 
 # Use above build as base
-FROM base as base-with-tools
+FROM base AS base-with-tools
 
 SHELL ["/bin/bash", "-cl"]
 
 # Initialize repo
 RUN cd chipyard && \
-        export MAKEFLAGS=-"j $(nproc)" && \
+        export MAKEFLAGS="-j$(nproc)" && \
+        source /opt/conda/etc/profile.d/conda.sh && \
         conda activate base && \
-        ./setup.sh --env-name chipyard --skip-validate
+        ./build-setup.sh --conda-env-name chipyard
 
 SHELL ["/opt/conda/bin/conda", "run", "-n", "chipyard", "/bin/bash", "-cl"]
 
