@@ -10,6 +10,7 @@ CONDA_CMD="conda" # some installers install mamba or micromamba
 DRY_RUN_OPTION=""
 DRY_RUN_ECHO=()
 REINSTALL_CONDA=0
+CONDA_SOLVER_ARGS=()
 
 usage()
 {
@@ -148,6 +149,10 @@ else
     # get most up-to-date conda version
     "${DRY_RUN_ECHO[@]}" $SUDO "$CONDA_EXE" update $DRY_RUN_OPTION -y -n base -c conda-forge conda
 
+    # install the fast solver before pulling in larger packages
+    $SUDO "$CONDA_EXE" install $DRY_RUN_OPTION -y -n base conda-libmamba-solver
+    CONDA_SOLVER_ARGS=(--solver libmamba)
+
     # see https://conda-forge.org/docs/user/tipsandtricks.html#multiple-channels
     # for more information on flexible channel_priority
     "${DRY_RUN_ECHO[@]}" $SUDO "$CONDA_EXE" config --system --set channel_priority flexible
@@ -158,18 +163,15 @@ else
     # automatically use the ucb-bar channel for specific packages https://anaconda.org/ucb-bar/repo
     "${DRY_RUN_ECHO[@]}" $SUDO "$CONDA_EXE" config --system --add channels ucb-bar
 
-    # conda-build is a special case and must always be installed into the base environment
-    $SUDO "$CONDA_EXE" install $DRY_RUN_OPTION -y -n base conda-build
-
-    # conda-libmamba-solver is a special case and must always be installed into the base environment
-    # see https://www.anaconda.com/blog/a-faster-conda-for-a-growing-community
-    $SUDO "$CONDA_EXE" install $DRY_RUN_OPTION -y -n base conda-libmamba-solver
-
     # Use the fast solver by default
+    "${DRY_RUN_ECHO[@]}" $SUDO "$CONDA_EXE" config --system --set solver libmamba
     "${DRY_RUN_ECHO[@]}" $SUDO "$CONDA_EXE" config --system --set experimental_solver libmamba
 
+    # conda-build is a special case and must always be installed into the base environment
+    $SUDO "$CONDA_EXE" install $DRY_RUN_OPTION "${CONDA_SOLVER_ARGS[@]}" -y -n base conda-build
+
     # conda-lock is a special case and must always be installed into the base environment
-    $SUDO "$CONDA_EXE" install $DRY_RUN_OPTION -y -n base conda-lock=1.4
+    $SUDO "$CONDA_EXE" install $DRY_RUN_OPTION "${CONDA_SOLVER_ARGS[@]}" -y -n base conda-lock=1.4
 
     conda_init_extra_args=()
     if [[ "$INSTALL_TYPE" == system ]]; then
