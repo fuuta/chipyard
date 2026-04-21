@@ -4,6 +4,7 @@
 
 FROM ubuntu:24.04 AS base
 ARG CHIPYARD_HASH
+ARG CHIPYARD_REPO=https://github.com/ucb-bar/chipyard.git
 
 MAINTAINER https://groups.google.com/forum/#!forum/chipyard
 
@@ -25,7 +26,7 @@ RUN apt-get update && \
 WORKDIR /root
 
 # Install Chipyard and run ubuntu-req.sh to install necessary dependencies
-RUN git clone https://github.com/ucb-bar/chipyard.git && \
+RUN git clone $CHIPYARD_REPO chipyard && \
         cd chipyard && \
         git checkout $CHIPYARD_HASH
 
